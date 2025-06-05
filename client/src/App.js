@@ -1,5 +1,6 @@
 
 import LandingPage from './components/LandingPage';
+import EventPage from './components/EventPage';
 import './App.css';
 
 function App() {
