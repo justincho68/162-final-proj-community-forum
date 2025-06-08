@@ -2,21 +2,25 @@
     font-family: Arial, sans-serif;
     padding: 20px;
     background-color: #f9f9f9;
+    text-align: left;
 }
 
+
 .arrow{
+    display: inline;
     margin-left: 50px;
+    border-radius: 5px;
+    text-align: left;
     font-size: 2rem;
     font-weight: bold;
-   text-align: left;
-   box-shadow: beige;
+    text-align: left;
+    color: black;
 }
 
 .event-container{
     display: grid;
     flex-direction: column;
     align-items: center;
-    grid-template-columns: repeat(3);
 }
 
 .event-container img{
@@ -67,3 +71,4 @@
 #free{background-color: lightgreen;}
 
 #paid{background-color: lightblue;}
+
