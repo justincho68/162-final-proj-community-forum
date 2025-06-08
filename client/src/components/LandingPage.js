@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import './LandingPage.css';
 
 
@@ -50,24 +51,27 @@ function LandingPage() {
 
             <div className='event-grid'>
                 {dummyEvents.map((event, index)=> (
-                    <div className='event-card' key = {index}>
-                        <h3 className='event-title>'>{event.title}</h3>
+                    <Link to ={`/FullEventInfo/${event.title}`} className='event-link'
+                        state={{event}} key = {index}>
+                        <div className='event-card'>
+                            <h3 className='event-title>'>{event.title}</h3>
 
-                        <div className='event-image'>
-                            {event.image ? (
-                                <img src ={event.image} alt={event.title} />
-                            ) : (
-                                <div className='image-placeholder'>[Image]</div>
-                            )}
+                            <div className='event-image'>
+                                {event.image ? (
+                                    <img src ={event.image} alt={event.title} />
+                                ) : (
+                                    <div className='image-placeholder'>[Image]</div>
+                                )}
+                            </div>
+
+                            <div className='event-info'>
+                                <span className='event-cost'>{event.paid ? "Paid" : "Free"}</span>
+                                <span className='event-date'>{event.date}</span>
+                            </div>
+
+                            <p className='event-description'>{event.description}</p>
                         </div>
-
-                        <div className='event-info'>
-                            <span className='event-cost'>{event.paid ? "Paid" : "Free"}</span>
-                            <span className='event-date'>{event.date}</span>
-                        </div>
-
-                        <p className='event-description'>{event.description}</p>
-                    </div>
+                    </Link>
                   ))}
             </div>
 
