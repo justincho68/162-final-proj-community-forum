@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import './LandingPage.css';
-
+import { auth } from '../firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 const dummyEvents = [
     {
@@ -29,6 +30,21 @@ const dummyEvents = [
 
 
 function LandingPage() {
+    const [user, setUser] = useState(null);
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (u) => {
+            setUser(u);
+        });
+        return () => unsubscribe();
+    }, []);
+
+    const handleAccountClick = (e) => {
+        e.preventDefault();
+        if (!user) {
+            window.location.href = '/login.html';
+        }
+    };
+    
     return (
         <div className="landing-page">
             <header className="header">
@@ -36,7 +52,7 @@ function LandingPage() {
             <nav className='navigation'>
                 <a href="#">Home</a>
                 <a href="#">Create Event</a>
-                <a href="#">Account</a>
+                <a href="#" onClick={handleAccountClick}>Account</a>
             </nav>
             </header>
 
