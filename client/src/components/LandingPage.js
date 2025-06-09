@@ -3,39 +3,30 @@ import { Link } from 'react-router-dom';
 import './LandingPage.css';
 import { auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-
-const dummyEvents = [
-    {
-        title: 'Davis Farmers Market',
-        image: '/images/davis_farmers_market.jpg',
-        paid: false,
-        date: '2025-06-07',
-        description: 'Come enjoy fresh produce and local crafts every Saturday at Central Park!'
-      },
-      {
-        title: 'Community Garage Sale',
-        image: '',
-        paid: false,
-        date: '2025-06-10',
-        description: 'Clean out your closet and join us for a giant neighborhood garage sale.'
-      },
-      {
-        title: 'Bake Sale for Charity',
-        image: '/images/bake_sale.jpg',
-        paid: true,
-        date: '2025-06-12',
-        description: 'Delicious baked goods with all proceeds going to local shelters.'
-      },
-];
-
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../firebase';
 
 function LandingPage() {
     const [user, setUser] = useState(null);
+    const [events, setEvents] = useState([]);
+    
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (u) => {
             setUser(u);
         });
         return () => unsubscribe();
+    }, []);
+
+    useEffect(() => {
+        const fetchEvents = async () => {
+            const querySnapshot = await getDocs(collection(db, 'events'));
+            const eventsData = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+            }));
+            setEvents(eventsData);
+        };
+        fetchEvents();
     }, []);
 
     const handleAccountClick = (e) => {
@@ -73,7 +64,7 @@ function LandingPage() {
             </div>
 
             <div className='event-grid'>
-                {dummyEvents.map((event, index)=> (
+                {events.map((event, index)=> (
                     <Link to ={`/FullEventInfo/${event.title}`} className='event-link'
                         state={{event}} key = {index}>
                         <div className='event-card'>
