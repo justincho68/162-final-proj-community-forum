@@ -44,6 +44,13 @@ function LandingPage() {
             window.location.href = '/login.html';
         }
     };
+
+    const handleCreateEventClick = (e) => {
+        e.preventDefault();
+        if (!user) {
+            window.location.href = '/login.html';
+        }
+    };
     
     return (
         <div className="landing-page">
@@ -51,7 +58,7 @@ function LandingPage() {
             <h1 className='title'>The Davis Bulletin</h1>
             <nav className='navigation'>
                 <a href="#">Home</a>
-                <a href="#">Create Event</a>
+                <a href="#" onClick={handleCreateEventClick}>Create Event</a>
                 <a href="#" onClick={handleAccountClick}>Account</a>
             </nav>
             </header>
