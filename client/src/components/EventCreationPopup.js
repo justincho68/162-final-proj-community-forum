@@ -1,5 +1,6 @@
-// EventCreationPopup.js
 import React, { useState, useEffect } from 'react';
+import { auth } from '../firebase.js'; 
+import { createEvent } from '../services/eventService';
 import './EventCreationPopup.css';
 
 const EventCreationPopup = ({ isOpen, onClose, onSubmit }) => {
@@ -23,42 +24,33 @@ const EventCreationPopup = ({ isOpen, onClose, onSubmit }) => {
     requiresRegistration: false
   });
   
-  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [user, setUser] = useState(null);
 
-  //get the categories from the backend
+  const categories = [
+    'Technology', 'Business', 'Education', 'Arts & Culture', 'Sports & Fitness',
+    'Health & Wellness', 'Food & Drink', 'Music', 'Networking', 'Workshop',
+    'Conference', 'Meetup', 'Social', 'Other'
+  ];
+
+  //check auth status with firebase
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/events/categories`);
-        const data = await response.json();
-        
-        if (data.success) {
-          setCategories(data.categories);
-        } else {
-          // Fallback to hardcoded categories if API fails
-          setCategories([
-            'Technology', 'Business', 'Education', 'Arts & Culture', 'Sports & Fitness',
-            'Health & Wellness', 'Food & Drink', 'Music', 'Networking', 'Workshop',
-            'Conference', 'Meetup', 'Social', 'Other'
-          ]);
-        }
-      } catch (error) {
-        console.error('Failed to fetch categories:', error);
-        // Fallback categories
-        setCategories([
-          'Technology', 'Business', 'Education', 'Arts & Culture', 'Sports & Fitness',
-          'Health & Wellness', 'Food & Drink', 'Music', 'Networking', 'Workshop',
-          'Conference', 'Meetup', 'Social', 'Other'
-        ]);
+    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+      setUser(currentUser);
+      
+      //prefill inofrmation if user logged in 
+      if (currentUser) {
+        setFormData(prev => ({
+          ...prev,
+          organizerName: currentUser.displayName || '',
+          organizerEmail: currentUser.email || ''
+        }));
       }
-    };
+    });
 
-    if (isOpen) {
-      fetchCategories();
-    }
-  }, [isOpen]);
+    return () => unsubscribe();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -72,6 +64,13 @@ const EventCreationPopup = ({ isOpen, onClose, onSubmit }) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    // check if user is logged in and basic validation
+    if (!user) {
+      setError('You must be logged in to create events. Please log in and try again.');
+      setLoading(false);
+      return;
+    }
 
     // Basic validation
     if (!formData.title || !formData.description || !formData.category) {
@@ -99,47 +98,67 @@ const EventCreationPopup = ({ isOpen, onClose, onSubmit }) => {
     }
 
     try {
-      // Call the backend API
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/events`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...formData,
-          capacity: formData.capacity ? parseInt(formData.capacity) : null,
-          price: parseFloat(formData.price) || 0
-        })
+      // Create event in Firestore
+      const newEvent = await createEvent({
+        ...formData,
+        capacity: formData.capacity ? parseInt(formData.capacity) : null,
+        price: parseFloat(formData.price) || 0
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to create event');
-      }
-
-      // Call the parent's onSubmit callback with the response
+      // Call parent callback
       if (onSubmit) {
-        onSubmit(data.event);
+        onSubmit(newEvent);
       }
       
-      // Reset form
+      // Reset form and close
       setFormData({
         title: '', description: '', category: '', startDate: '', startTime: '',
         endDate: '', endTime: '', locationType: 'physical', venue: '', address: '',
-        city: '', virtualLink: '', capacity: '', price: '', organizerName: '',
-        organizerEmail: '', requiresRegistration: false
+        city: '', virtualLink: '', capacity: '', price: '', 
+        organizerName: user?.displayName || '', 
+        organizerEmail: user?.email || '', 
+        requiresRegistration: false
       });
       
       onClose();
     } catch (error) {
-      setError(error.message || 'Failed to create event');
+      console.error('Error creating event:', error);
+      if (error.code === 'permission-denied') {
+        setError('Permission denied. Please make sure you are logged in.');
+      } else {
+        setError(error.message || 'Failed to create event');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   if (!isOpen) return null;
+
+  // Show login prompt if user is not authenticated
+  if (!user) {
+    return (
+      <div className="popup-overlay">
+        <div className="popup-container">
+          <div className="popup-header">
+            <h2>Login Required</h2>
+            <button className="close-btn" onClick={onClose}>×</button>
+          </div>
+          <div style={{ padding: '24px', textAlign: 'center' }}>
+            <p>You must be logged in to create events.</p>
+            <p>Please log in and try again.</p>
+            <button 
+              onClick={onClose}
+              className="btn-submit"
+              style={{ marginTop: '20px' }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="popup-overlay">
@@ -151,6 +170,17 @@ const EventCreationPopup = ({ isOpen, onClose, onSubmit }) => {
 
         <form onSubmit={handleSubmit} className="event-form">
           {error && <div className="error-message">{error}</div>}
+
+          {/* Show user info */}
+          <div style={{ 
+            background: '#f8f9fa', 
+            padding: '12px', 
+            borderRadius: '6px', 
+            marginBottom: '20px',
+            fontSize: '14px'
+          }}>
+            <strong>Creating as:</strong> {user.displayName || user.email}
+          </div>
 
           {/* Basic Information */}
           <div className="form-section">

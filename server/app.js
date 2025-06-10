@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const { db } = require('./firebase-admin');
 require('dotenv').config();
 
 const app = express();
@@ -13,46 +14,56 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-//REPLACE LATER WITH ACTUAL DATABASE! !!!
-let events = [];
-let users = [];
-let registrations = [];
-
 // Helper function to generate IDs
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
-//EVENT ROUTES
+// ============= EVENT ROUTES WITH FIRESTORE =============
 
 // GET /api/events - Get all events (with optional filters)
-app.get('/api/events', (req, res) => {
+app.get('/api/events', async (req, res) => {
   try {
     const { category, search, status = 'approved' } = req.query;
     
-    let filteredEvents = events.filter(event => event.status === status);
+    let query = db.collection('events');
     
-    //filter events by category
+    // Filter by status
+    query = query.where('status', '==', status);
+    
+    // Filter by category if provided
     if (category) {
-      filteredEvents = filteredEvents.filter(event => 
-        event.category.toLowerCase() === category.toLowerCase()
-      );
+      query = query.where('category', '==', category);
     }
     
-    //search using title and description
+    // Order by creation date (newest first)
+    query = query.orderBy('createdAt', 'desc');
+    
+    const snapshot = await query.get();
+    let events = [];
+    
+    snapshot.forEach(doc => {
+      const eventData = doc.data();
+      // Convert Firestore timestamps to ISO strings
+      events.push({
+        id: doc.id,
+        ...eventData,
+        createdAt: eventData.createdAt?.toDate?.()?.toISOString() || eventData.createdAt,
+        updatedAt: eventData.updatedAt?.toDate?.()?.toISOString() || eventData.updatedAt
+      });
+    });
+    
+    // Client-side search filter (since Firestore doesn't support full-text search easily)
     if (search) {
       const searchTerm = search.toLowerCase();
-      filteredEvents = filteredEvents.filter(event =>
+      events = events.filter(event =>
         event.title.toLowerCase().includes(searchTerm) ||
         event.description.toLowerCase().includes(searchTerm)
       );
     }
     
-    // Sort by start date (newest first)
-    filteredEvents.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
-    
     res.json({
       success: true,
-      events: filteredEvents,
-      count: filteredEvents.length
+      events,
+      count: events.length
     });
   } catch (error) {
     console.error('Get events error:', error);
@@ -64,20 +75,32 @@ app.get('/api/events', (req, res) => {
 });
 
 // GET /api/events/:id - Get single event
-app.get('/api/events/:id', (req, res) => {
+app.get('/api/events/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const event = events.find(e => e.id === id);
+    const eventDoc = await db.collection('events').doc(id).get();
     
-    if (!event) {
+    if (!eventDoc.exists) {
       return res.status(404).json({
         success: false,
         error: 'Event not found'
       });
     }
     
+    const eventData = eventDoc.data();
+    
     // Increment view count
-    event.viewCount = (event.viewCount || 0) + 1;
+    await db.collection('events').doc(id).update({
+      viewCount: (eventData.viewCount || 0) + 1
+    });
+    
+    const event = {
+      id: eventDoc.id,
+      ...eventData,
+      viewCount: (eventData.viewCount || 0) + 1,
+      createdAt: eventData.createdAt?.toDate?.()?.toISOString() || eventData.createdAt,
+      updatedAt: eventData.updatedAt?.toDate?.()?.toISOString() || eventData.updatedAt
+    };
     
     res.json({
       success: true,
@@ -93,7 +116,7 @@ app.get('/api/events/:id', (req, res) => {
 });
 
 // POST /api/events - Create new event
-app.post('/api/events', (req, res) => {
+app.post('/api/events', async (req, res) => {
   try {
     const eventData = req.body;
     
@@ -112,23 +135,32 @@ app.post('/api/events', (req, res) => {
       });
     }
     
-    // Create new event
+    // Create new event with Firestore server timestamps
     const newEvent = {
-      id: generateId(),
       ...eventData,
-      status: 'pending', // Default status, admin can approve later
+      status: 'pending', // Default status
       attendeeCount: 0,
       viewCount: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
     };
     
-    events.push(newEvent);
+    // Add to Firestore
+    const docRef = await db.collection('events').add(newEvent);
+    
+    // Get the created document to return it
+    const createdDoc = await docRef.get();
+    const createdEvent = {
+      id: docRef.id,
+      ...createdDoc.data(),
+      createdAt: new Date().toISOString(), // Convert for response
+      updatedAt: new Date().toISOString()
+    };
     
     res.status(201).json({
       success: true,
       message: 'Event created successfully',
-      event: newEvent
+      event: createdEvent
     });
   } catch (error) {
     console.error('Create event error:', error);
@@ -140,14 +172,15 @@ app.post('/api/events', (req, res) => {
 });
 
 // PUT /api/events/:id - Update event
-app.put('/api/events/:id', (req, res) => {
+app.put('/api/events/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
     
-    const eventIndex = events.findIndex(e => e.id === id);
+    // Check if event exists
+    const eventDoc = await db.collection('events').doc(id).get();
     
-    if (eventIndex === -1) {
+    if (!eventDoc.exists) {
       return res.status(404).json({
         success: false,
         error: 'Event not found'
@@ -155,16 +188,26 @@ app.put('/api/events/:id', (req, res) => {
     }
     
     // Update event
-    events[eventIndex] = {
-      ...events[eventIndex],
+    const updateData = {
       ...updates,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+    
+    await db.collection('events').doc(id).update(updateData);
+    
+    // Get updated document
+    const updatedDoc = await db.collection('events').doc(id).get();
+    const updatedEvent = {
+      id: updatedDoc.id,
+      ...updatedDoc.data(),
+      createdAt: updatedDoc.data().createdAt?.toDate?.()?.toISOString(),
       updatedAt: new Date().toISOString()
     };
     
     res.json({
       success: true,
       message: 'Event updated successfully',
-      event: events[eventIndex]
+      event: updatedEvent
     });
   } catch (error) {
     console.error('Update event error:', error);
@@ -176,22 +219,33 @@ app.put('/api/events/:id', (req, res) => {
 });
 
 // DELETE /api/events/:id - Delete event
-app.delete('/api/events/:id', (req, res) => {
+app.delete('/api/events/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const eventIndex = events.findIndex(e => e.id === id);
     
-    if (eventIndex === -1) {
+    // Check if event exists
+    const eventDoc = await db.collection('events').doc(id).get();
+    
+    if (!eventDoc.exists) {
       return res.status(404).json({
         success: false,
         error: 'Event not found'
       });
     }
     
-    events.splice(eventIndex, 1);
+    // Delete event
+    await db.collection('events').doc(id).delete();
     
-    // Also remove related registrations
-    registrations = registrations.filter(reg => reg.eventId !== id);
+    // Also delete related registrations
+    const registrationsSnapshot = await db.collection('registrations')
+      .where('eventId', '==', id)
+      .get();
+    
+    const batch = db.batch();
+    registrationsSnapshot.docs.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+    await batch.commit();
     
     res.json({
       success: true,
@@ -220,115 +274,38 @@ app.get('/api/events/categories', (req, res) => {
   });
 });
 
-// ============= USER ROUTES =============
+// ============= REGISTRATION ROUTES WITH FIRESTORE =============
 
-// GET /api/users - Get all users (admin only)
-app.get('/api/users', (req, res) => {
-  try {
-    res.json({
-      success: true,
-      users: users.map(user => ({ ...user, password: undefined })) // Remove passwords
-    });
-  } catch (error) {
-    console.error('Get users error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to fetch users' 
-    });
-  }
-});
-
-// POST /api/users - Create new user
-app.post('/api/users', (req, res) => {
-  try {
-    const userData = req.body;
-    
-    // Basic validation
-    if (!userData.email || !userData.name) {
-      return res.status(400).json({
-        success: false,
-        error: 'Email and name are required'
-      });
-    }
-    
-    // Check if user exists
-    const existingUser = users.find(u => u.email === userData.email);
-    if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        error: 'User with this email already exists'
-      });
-    }
-    
-    const newUser = {
-      id: generateId(),
-      ...userData,
-      role: 'user',
-      createdAt: new Date().toISOString()
-    };
-    
-    users.push(newUser);
-    
-    res.status(201).json({
-      success: true,
-      message: 'User created successfully',
-      user: { ...newUser, password: undefined }
-    });
-  } catch (error) {
-    console.error('Create user error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to create user' 
-    });
-  }
-});
-
-// GET /api/users/:id - Get user by ID
-app.get('/api/users/:id', (req, res) => {
-  try {
-    const { id } = req.params;
-    const user = users.find(u => u.id === id);
-    
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        error: 'User not found'
-      });
-    }
-    
-    res.json({
-      success: true,
-      user: { ...user, password: undefined }
-    });
-  } catch (error) {
-    console.error('Get user error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to fetch user' 
-    });
-  }
-});
-
-// ============= REGISTRATION ROUTES =============
-
-// GET /api/registrations - Get all registrations
-app.get('/api/registrations', (req, res) => {
+// GET /api/registrations - Get registrations
+app.get('/api/registrations', async (req, res) => {
   try {
     const { eventId, userId } = req.query;
     
-    let filteredRegistrations = registrations;
+    let query = db.collection('registrations');
     
     if (eventId) {
-      filteredRegistrations = filteredRegistrations.filter(reg => reg.eventId === eventId);
+      query = query.where('eventId', '==', eventId);
     }
     
     if (userId) {
-      filteredRegistrations = filteredRegistrations.filter(reg => reg.userId === userId);
+      query = query.where('userId', '==', userId);
     }
+    
+    const snapshot = await query.get();
+    const registrations = [];
+    
+    snapshot.forEach(doc => {
+      const regData = doc.data();
+      registrations.push({
+        id: doc.id,
+        ...regData,
+        registeredAt: regData.registeredAt?.toDate?.()?.toISOString() || regData.registeredAt
+      });
+    });
     
     res.json({
       success: true,
-      registrations: filteredRegistrations
+      registrations
     });
   } catch (error) {
     console.error('Get registrations error:', error);
@@ -340,7 +317,7 @@ app.get('/api/registrations', (req, res) => {
 });
 
 // POST /api/registrations - Register for event
-app.post('/api/registrations', (req, res) => {
+app.post('/api/registrations', async (req, res) => {
   try {
     const { eventId, userId, userEmail, userName } = req.body;
     
@@ -352,20 +329,23 @@ app.post('/api/registrations', (req, res) => {
     }
     
     // Check if event exists
-    const event = events.find(e => e.id === eventId);
-    if (!event) {
+    const eventDoc = await db.collection('events').doc(eventId).get();
+    if (!eventDoc.exists) {
       return res.status(404).json({
         success: false,
         error: 'Event not found'
       });
     }
     
-    // Check if already registered
-    const existingRegistration = registrations.find(reg => 
-      reg.eventId === eventId && reg.userId === userId
-    );
+    const eventData = eventDoc.data();
     
-    if (existingRegistration) {
+    // Check if already registered
+    const existingRegSnapshot = await db.collection('registrations')
+      .where('eventId', '==', eventId)
+      .where('userId', '==', userId)
+      .get();
+    
+    if (!existingRegSnapshot.empty) {
       return res.status(400).json({
         success: false,
         error: 'Already registered for this event'
@@ -373,35 +353,39 @@ app.post('/api/registrations', (req, res) => {
     }
     
     // Check capacity
-    if (event.capacity && event.attendeeCount >= event.capacity) {
+    if (eventData.capacity && eventData.attendeeCount >= eventData.capacity) {
       return res.status(400).json({
         success: false,
         error: 'Event is at full capacity'
       });
     }
     
+    // Create registration
     const newRegistration = {
-      id: generateId(),
       eventId,
       userId,
       userEmail,
       userName,
       status: 'confirmed',
-      registeredAt: new Date().toISOString()
+      registeredAt: admin.firestore.FieldValue.serverTimestamp()
     };
     
-    registrations.push(newRegistration);
-    
-    // Update event attendee count
-    const eventIndex = events.findIndex(e => e.id === eventId);
-    if (eventIndex !== -1) {
-      events[eventIndex].attendeeCount = (events[eventIndex].attendeeCount || 0) + 1;
-    }
+    // Use a transaction to ensure consistency
+    await db.runTransaction(async (transaction) => {
+      // Add registration
+      const regRef = db.collection('registrations').doc();
+      transaction.set(regRef, newRegistration);
+      
+      // Update event attendee count
+      const eventRef = db.collection('events').doc(eventId);
+      transaction.update(eventRef, {
+        attendeeCount: admin.firestore.FieldValue.increment(1)
+      });
+    });
     
     res.status(201).json({
       success: true,
-      message: 'Successfully registered for event',
-      registration: newRegistration
+      message: 'Successfully registered for event'
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -412,65 +396,41 @@ app.post('/api/registrations', (req, res) => {
   }
 });
 
-// DELETE /api/registrations/:id - Cancel registration
-app.delete('/api/registrations/:id', (req, res) => {
-  try {
-    const { id } = req.params;
-    const regIndex = registrations.findIndex(reg => reg.id === id);
-    
-    if (regIndex === -1) {
-      return res.status(404).json({
-        success: false,
-        error: 'Registration not found'
-      });
-    }
-    
-    const registration = registrations[regIndex];
-    registrations.splice(regIndex, 1);
-    
-    // Update event attendee count
-    const eventIndex = events.findIndex(e => e.id === registration.eventId);
-    if (eventIndex !== -1) {
-      events[eventIndex].attendeeCount = Math.max(0, (events[eventIndex].attendeeCount || 1) - 1);
-    }
-    
-    res.json({
-      success: true,
-      message: 'Registration cancelled successfully'
-    });
-  } catch (error) {
-    console.error('Cancel registration error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to cancel registration' 
-    });
-  }
-});
-
 // ============= UTILITY ROUTES =============
 
 // GET /api/health - Health check
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
-    message: 'Server is running',
+    message: 'Server is running with Firestore',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development'
   });
 });
 
-// GET /api/stats - Get basic statistics
-app.get('/api/stats', (req, res) => {
+// GET /api/stats - Get statistics
+app.get('/api/stats', async (req, res) => {
   try {
+    // Get event counts
+    const eventsSnapshot = await db.collection('events').get();
+    const approvedEventsSnapshot = await db.collection('events').where('status', '==', 'approved').get();
+    const pendingEventsSnapshot = await db.collection('events').where('status', '==', 'pending').get();
+    
+    // Get registration count
+    const registrationsSnapshot = await db.collection('registrations').get();
+    
+    // Get upcoming events
+    const upcomingEventsSnapshot = await db.collection('events')
+      .where('status', '==', 'approved')
+      .where('startDate', '>', new Date().toISOString().split('T')[0])
+      .get();
+    
     const stats = {
-      totalEvents: events.length,
-      approvedEvents: events.filter(e => e.status === 'approved').length,
-      pendingEvents: events.filter(e => e.status === 'pending').length,
-      totalUsers: users.length,
-      totalRegistrations: registrations.length,
-      upcomingEvents: events.filter(e => 
-        e.status === 'approved' && new Date(e.startDate) > new Date()
-      ).length
+      totalEvents: eventsSnapshot.size,
+      approvedEvents: approvedEventsSnapshot.size,
+      pendingEvents: pendingEventsSnapshot.size,
+      totalRegistrations: registrationsSnapshot.size,
+      upcomingEvents: upcomingEventsSnapshot.size
     };
     
     res.json({
@@ -516,36 +476,7 @@ app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`📡 API URL: http://localhost:${PORT}/api`);
-  
-  // Add some sample data for testing
-  if (process.env.NODE_ENV !== 'production') {
-    // Sample events
-    events.push({
-      id: 'sample-1',
-      title: 'React Workshop',
-      description: 'Learn the basics of React development',
-      category: 'Technology',
-      startDate: '2024-12-15',
-      startTime: '10:00',
-      endDate: '2024-12-15',
-      endTime: '16:00',
-      locationType: 'physical',
-      venue: 'Tech Hub',
-      city: 'San Francisco',
-      capacity: 50,
-      price: 0,
-      organizerName: 'John Doe',
-      organizerEmail: 'john@example.com',
-      requiresRegistration: true,
-      status: 'approved',
-      attendeeCount: 5,
-      viewCount: 23,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    });
-    
-    console.log('📝 Sample data loaded for development');
-  }
+  console.log(`🔥 Connected to Firestore: davis-bulletin`);
 });
 
 module.exports = app;
