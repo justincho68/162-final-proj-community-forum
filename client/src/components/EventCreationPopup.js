@@ -1,5 +1,6 @@
+// EventCreationPopup.js - Updated with local image storage (no Firebase Storage needed)
 import React, { useState, useEffect } from 'react';
-import { auth } from '../firebase.js'; 
+import { auth } from '../firebase.js';
 import { createEvent } from '../services/eventService';
 import './EventCreationPopup.css';
 
@@ -21,12 +22,14 @@ const EventCreationPopup = ({ isOpen, onClose, onSubmit }) => {
     price: '',
     organizerName: '',
     organizerEmail: '',
-    requiresRegistration: false
+    requiresRegistration: false,
+    imageUrl: '' // This will store the base64 data URL or external URL
   });
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [user, setUser] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
 
   const categories = [
     'Technology', 'Business', 'Education', 'Arts & Culture', 'Sports & Fitness',
@@ -34,12 +37,11 @@ const EventCreationPopup = ({ isOpen, onClose, onSubmit }) => {
     'Conference', 'Meetup', 'Social', 'Other'
   ];
 
-  //check auth status with firebase
+  // Check authentication status
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
       setUser(currentUser);
       
-      //prefill inofrmation if user logged in 
       if (currentUser) {
         setFormData(prev => ({
           ...prev,
@@ -60,12 +62,66 @@ const EventCreationPopup = ({ isOpen, onClose, onSubmit }) => {
     }));
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setError('Please select a valid image file');
+        return;
+      }
+      
+      // Validate file size (max 2MB for local storage)
+      if (file.size > 2 * 1024 * 1024) {
+        setError('Image size must be less than 2MB for local storage');
+        return;
+      }
+      
+      // Convert to base64 data URL
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target.result;
+        setImagePreview(dataUrl);
+        setFormData(prev => ({
+          ...prev,
+          imageUrl: dataUrl
+        }));
+      };
+      reader.readAsDataURL(file);
+      
+      setError(''); // Clear any previous errors
+    }
+  };
+
+  // Handle external URL input
+  const handleImageUrlChange = (e) => {
+    const url = e.target.value;
+    setFormData(prev => ({
+      ...prev,
+      imageUrl: url
+    }));
+    
+    // Set preview for external URLs
+    if (url && url.startsWith('http')) {
+      setImagePreview(url);
+    } else if (!url) {
+      setImagePreview(null);
+    }
+  };
+
+  const removeImage = () => {
+    setImagePreview(null);
+    setFormData(prev => ({ ...prev, imageUrl: '' }));
+    // Clear file input
+    const fileInput = document.getElementById('image-upload');
+    if (fileInput) fileInput.value = '';
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
-    // check if user is logged in and basic validation
     if (!user) {
       setError('You must be logged in to create events. Please log in and try again.');
       setLoading(false);
@@ -98,27 +154,36 @@ const EventCreationPopup = ({ isOpen, onClose, onSubmit }) => {
     }
 
     try {
-      // Create event in Firestore
-      const newEvent = await createEvent({
+      // Create event with local image data
+      const eventData = {
         ...formData,
         capacity: formData.capacity ? parseInt(formData.capacity) : null,
         price: parseFloat(formData.price) || 0
-      });
+        // imageUrl already contains the base64 data URL or external URL
+      };
+      
+      const newEvent = await createEvent(eventData);
 
-      // Call parent callback
       if (onSubmit) {
         onSubmit(newEvent);
       }
       
-      // Reset form and close
+      // Reset form
       setFormData({
         title: '', description: '', category: '', startDate: '', startTime: '',
         endDate: '', endTime: '', locationType: 'physical', venue: '', address: '',
         city: '', virtualLink: '', capacity: '', price: '', 
         organizerName: user?.displayName || '', 
         organizerEmail: user?.email || '', 
-        requiresRegistration: false
+        requiresRegistration: false,
+        imageUrl: ''
       });
+      
+      setImagePreview(null);
+      
+      // Clear file input
+      const fileInput = document.getElementById('image-upload');
+      if (fileInput) fileInput.value = '';
       
       onClose();
     } catch (error) {
@@ -135,7 +200,6 @@ const EventCreationPopup = ({ isOpen, onClose, onSubmit }) => {
 
   if (!isOpen) return null;
 
-  // Show login prompt if user is not authenticated
   if (!user) {
     return (
       <div className="popup-overlay">
@@ -171,7 +235,6 @@ const EventCreationPopup = ({ isOpen, onClose, onSubmit }) => {
         <form onSubmit={handleSubmit} className="event-form">
           {error && <div className="error-message">{error}</div>}
 
-          {/* Show user info */}
           <div style={{ 
             background: '#f8f9fa', 
             padding: '12px', 
@@ -241,6 +304,54 @@ const EventCreationPopup = ({ isOpen, onClose, onSubmit }) => {
                 rows="3"
                 required
               />
+            </div>
+
+            {/* Image Upload Section */}
+            <div className="form-group">
+              <label>Event Image</label>
+              
+              {imagePreview ? (
+                <div className="image-preview">
+                  <img src={imagePreview} alt="Event preview" />
+                  <button 
+                    type="button" 
+                    onClick={removeImage}
+                    className="remove-image-btn"
+                  >
+                    ×
+                  </button>
+                </div>
+              ) : (
+                <div className="image-upload">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    id="image-upload"
+                    style={{ display: 'none' }}
+                  />
+                  <label htmlFor="image-upload" className="upload-label">
+                    <div className="upload-placeholder">
+                      <span>📷</span>
+                      <p>Click to upload image</p>
+                      <small>JPG, PNG up to 2MB</small>
+                      <small>(Stored locally)</small>
+                    </div>
+                  </label>
+                </div>
+              )}
+              
+              <div className="form-group" style={{ marginTop: '10px' }}>
+                <label htmlFor="imageUrl">Or paste image URL</label>
+                <input
+                  type="url"
+                  id="imageUrl"
+                  name="imageUrl"
+                  value={formData.imageUrl}
+                  onChange={handleImageUrlChange}
+                  placeholder="https://example.com/image.jpg"
+                />
+              </div>
             </div>
           </div>
 

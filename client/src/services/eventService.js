@@ -1,4 +1,4 @@
-// client/src/services/eventService.js - Updated with auth
+// services/eventService.js - Updated with debugging
 import { 
   collection, 
   addDoc, 
@@ -22,6 +22,9 @@ export const createEvent = async (eventData) => {
     throw new Error('You must be logged in to create events');
   }
 
+  console.log('Creating event with data:', eventData); // Debug log
+  console.log('Image URL being saved:', eventData.imageUrl); // Debug log
+
   try {
     const event = {
       ...eventData,
@@ -30,20 +33,30 @@ export const createEvent = async (eventData) => {
       creatorEmail: currentUser.email,
       creatorName: currentUser.displayName || currentUser.email,
       // Set default values
-      status: 'pending', // 'pending', 'approved', 'rejected'
+      status: 'approved', // Change to 'approved' for testing (was 'pending')
       attendeeCount: 0,
       viewCount: 0,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     };
     
+    console.log('Final event object before saving:', event); // Debug log
+    
     const docRef = await addDoc(collection(db, 'events'), event);
-    return { 
+    
+    console.log('Event saved with ID:', docRef.id); // Debug log
+    
+    // Return the event with current timestamp for immediate display
+    const returnEvent = { 
       id: docRef.id, 
       ...event,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
+    
+    console.log('Returning event:', returnEvent); // Debug log
+    
+    return returnEvent;
   } catch (error) {
     console.error('Error creating event:', error);
     throw error;
@@ -77,13 +90,18 @@ export const getEvents = async (filters = {}) => {
     
     querySnapshot.forEach(doc => {
       const data = doc.data();
+      console.log('Fetched event:', doc.id, data); // Debug log
+      console.log('Event imageUrl:', data.imageUrl); // Debug log
+      
       events.push({
         id: doc.id,
         ...data,
-        createdAt: data.createdAt?.toDate?.()?.toISOString(),
-        updatedAt: data.updatedAt?.toDate?.()?.toISOString()
+        createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
+        updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt
       });
     });
+    
+    console.log('All fetched events:', events); // Debug log
     
     // Client-side search
     if (filters.search) {
@@ -166,8 +184,8 @@ export const getEvent = async (eventId) => {
       return {
         id: eventDoc.id,
         ...data,
-        createdAt: data.createdAt?.toDate?.()?.toISOString(),
-        updatedAt: data.updatedAt?.toDate?.()?.toISOString()
+        createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
+        updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt
       };
     } else {
       throw new Error('Event not found');
