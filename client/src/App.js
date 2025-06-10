@@ -1,3 +1,25 @@
+import LandingPage from './components/LandingPage';
+import EventPage from './components/EventPage';
+import {BrowserRouter, Route, Routes} from 'react-router-dom'
+import './App.css';
+
+function App() {
+  return (
+      <div className="App">
+        <BrowserRouter>
+          <Routes>
+            <Route path = '/' element = {<LandingPage />}/>
+            <Route path = '/FullEventInfo/:eventInfo' element = {<EventPage />}/>
+          </Routes>
+        </BrowserRouter>
+      </div>
+    );
+  }
+
+export default App;
+
+
+/*
 // App.js - Updated example usage
 import React, { useState } from 'react';
 import EventCreationPopup from './components/EventCreationPopup';
@@ -64,7 +86,6 @@ const App = () => {
       </header>
 
       <main style={{ padding: '20px' }}>
-        {/* Optional: Display events */}
         <div>
           <h2>Events ({events.length})</h2>
           {loading ? (
@@ -107,7 +128,7 @@ const App = () => {
         </div>
       </main>
 
-      {/* Event Creation Popup */}
+      //event creation
       <EventCreationPopup
         isOpen={isPopupOpen}
         onClose={() => setIsPopupOpen(false)}
@@ -118,3 +139,4 @@ const App = () => {
 };
 
 export default App;
+*/
