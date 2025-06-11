@@ -255,7 +255,6 @@ function LandingPage() {
                 </nav>
             </header>
 
-            {/* Enhanced Search and Filter Bar */}
             <div className='search-filter'>
                 <div className='search-container'>
                     <input
@@ -334,7 +333,6 @@ function LandingPage() {
                 </div>
             </div>
 
-            {/* Results Summary */}
             {!loading && (
                 <div className='results-summary'>
                     <span>
@@ -348,7 +346,6 @@ function LandingPage() {
                 </div>
             )}
 
-            {/* Events Grid */}
             {loading ? (
                 <div className='loading'>Loading events...</div>
             ) : (
@@ -360,7 +357,6 @@ function LandingPage() {
                             
                             return (
                                 <div key={event.id || index} className='event-card-wrapper'>
-                                    {/* Delete confirmation modal */}
                                     {showDeleteConfirm === event.id && (
                                         <div className='delete-modal-overlay' onClick={() => setShowDeleteConfirm(null)}>
                                             <div className='delete-modal' onClick={(e) => e.stopPropagation()}>
@@ -394,7 +390,6 @@ function LandingPage() {
                                         state={{ event }}
                                     >
                                         <div className='event-card'>
-                                            {/* Delete button - only show for event owner */}
                                             {canDelete && (
                                                 <button 
                                                     className='delete-btn'
