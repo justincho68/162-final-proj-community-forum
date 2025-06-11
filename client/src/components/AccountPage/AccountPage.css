@@ -173,7 +173,7 @@
   text-align: right;
 }
 
-.loading-overlay {
+.loadingoverlay {
   position: fixed;
   inset: 0;
   background-color: rgba(0, 0, 0, 0.3);
@@ -183,7 +183,7 @@
   z-index: 50;
 }
 
-.loading{
+.loadingsect{
   background-color: white;
   border-radius: 8px;
   padding: 24px;
@@ -201,7 +201,7 @@
   animation: spin 1s linear infinite;
 }
 
-.loading-text {
+.loadingtext {
   font-weight: 500;
 }
 
