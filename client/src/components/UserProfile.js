@@ -1,4 +1,3 @@
-// UserProfile.js - Public user profile page
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
@@ -39,17 +38,13 @@ function UserProfile() {
 
             try {
                 setLoading(true);
-                console.log('Fetching user profile for ID:', userId);
                 
                 // Try the 'profiles' collection first (based on your Firestore rules)
                 let userDoc = await getDoc(doc(db, 'profiles', userId));
-                console.log('Profiles collection - document exists:', userDoc.exists());
                 
                 if (!userDoc.exists()) {
                     // Try 'users' collection as fallback
-                    console.log('Trying users collection...');
                     userDoc = await getDoc(doc(db, 'users', userId));
-                    console.log('Users collection - document exists:', userDoc.exists());
                     
                     if (!userDoc.exists()) {
                         setError('User not found in either profiles or users collection');
@@ -59,7 +54,6 @@ function UserProfile() {
                 }
                 
                 const userData = userDoc.data();
-                console.log('User document data:', userData);
                 
                 setUserProfile({
                     id: userDoc.id,
@@ -70,19 +64,15 @@ function UserProfile() {
                     profileImage: userData.profileImage || '/images/default.png'
                 });
 
-                // Fetch user's public events
-                console.log('Fetching events for creator ID:', userId);
                 const eventsQuery = query(
                     collection(db, 'events'),
                     where('creatorId', '==', userId)
                 );
                 
                 const eventsSnapshot = await getDocs(eventsQuery);
-                console.log('Found events:', eventsSnapshot.docs.length);
                 
                 const events = eventsSnapshot.docs.map(doc => {
                     const data = doc.data();
-                    console.log('Event data:', data);
                     return {
                         id: doc.id,
                         ...data,
@@ -90,12 +80,11 @@ function UserProfile() {
                     };
                 });
 
-                // Filter for public events and sort
+                //filter for public events and sort
                 const publicEvents = events
                     .filter(event => event.status === 'approved' || event.status === 'pending' || !event.status)
                     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
                 
-                console.log('Public events:', publicEvents);
                 setUserEvents(publicEvents);
 
             } catch (error) {
@@ -110,13 +99,13 @@ function UserProfile() {
             }
         };
 
-        if (currentUser !== null) { // Wait for auth state to be determined
+        if (currentUser !== null) { //wait for auth state to be determined
             fetchUserProfile();
         }
     }, [userId, currentUser]);
 
     const handleBackClick = () => {
-        navigate(-1); // Go back to previous page
+        navigate(-1); //go back to previous page
     };
 
     const handleEventClick = (event) => {

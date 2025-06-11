@@ -3,6 +3,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { db, auth } from '../../firebase';
 import './AccountPage.css';
+import { useNavigate } from 'react-router-dom';
 
 function AccountPage() {
     const [user, loading, error] = useAuthState(auth);
@@ -85,10 +86,12 @@ function AccountPage() {
             setIsSaving(false);
         }
     };
+    const navigate = useNavigate();
 
     const handleCancel = () => {
         setProfileData({ ...originalData });
         setIsChanged(false);
+        navigate('/');
     };
 
     if (loading || isLoading) {
@@ -103,14 +106,7 @@ function AccountPage() {
     }
 
     if (!user) {
-        return (
-            <div className="container">
-                <div className="auth-required">
-                    <h2>Please log in to edit your profile</h2>
-                    <p>You need to be signed in to access this page.</p>
-                </div>
-            </div>
-        );
+        navigate('/login');
     }
 
     return (
@@ -121,7 +117,7 @@ function AccountPage() {
                         Cancel
                     </button>
                 </div>
-                <h1 className="edit-title">Edit profile</h1>
+                <h1 className="edit-title">Edit Account</h1>
                 <button 
                     onClick={handleSave}
                     disabled={!isChanged || isSaving}

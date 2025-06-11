@@ -1,4 +1,3 @@
-// Login.js - New React login component
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
@@ -27,7 +26,6 @@ const Login = () => {
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             if (user) {
-                console.log('User already logged in, redirecting...');
                 navigate(redirectTo);
             }
         });
@@ -44,11 +42,9 @@ const Login = () => {
             if (isLogin) {
                 // Login existing user
                 await signInWithEmailAndPassword(auth, email, password);
-                console.log('Login successful!');
             } else {
                 // Create new user
                 await createUserWithEmailAndPassword(auth, email, password);
-                console.log('Account created successfully!');
             }
             
             // Redirect after successful authentication

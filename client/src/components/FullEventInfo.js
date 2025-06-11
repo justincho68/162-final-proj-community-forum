@@ -1,4 +1,3 @@
-// FullEventInfo.js - Enhanced event detail page
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { auth } from '../firebase';
@@ -12,7 +11,7 @@ function FullEventInfo() {
     const [user, setUser] = useState(null);
     const [imageLoaded, setImageLoaded] = useState(false);
     
-    // Get event data from navigation state or fallback
+    //get event data from navigation state or fallback
     const event = location.state?.event;
     
     useEffect(() => {
@@ -22,7 +21,7 @@ function FullEventInfo() {
         return () => unsubscribe();
     }, []);
 
-    // If no event data, redirect back to home
+    // redirect to home if no events
     if (!event) {
         return (
             <div className="full-event-page">
@@ -37,7 +36,7 @@ function FullEventInfo() {
         );
     }
 
-    // Format date for display
+    //format date for display
     const formatEventDate = (startDate, startTime, endDate, endTime) => {
         if (!startDate) return '';
         
@@ -63,7 +62,7 @@ function FullEventInfo() {
                 });
                 formattedDate += ` at ${timeStr}`;
                 
-                // Add end time if provided
+                //add end time if provided
                 if (endTime) {
                     const [endHours, endMinutes] = endTime.split(':');
                     const endTimeDate = new Date();
@@ -91,7 +90,6 @@ function FullEventInfo() {
     };
 
     const handleImageLoad = (e) => {
-        console.log('Image loaded successfully for event:', event.title);
         setImageLoaded(true);
     };
 
@@ -106,11 +104,6 @@ function FullEventInfo() {
             alert('Organizer contact information not available.');
         }
     };
-
-    // Debug: Log event data to see what fields are available
-    console.log('Event data in FullEventInfo:', event);
-    console.log('Event creatorId:', event.creatorId);
-    console.log('Event organizerName:', event.organizerName);
 
     return (
         <div className="full-event-page">
@@ -218,7 +211,6 @@ function FullEventInfo() {
                                         className="organizer-name-link"
                                         onClick={() => {
                                             const userId = event.creatorId || event.userId || event.uid;
-                                            console.log('Navigating to profile with ID:', userId);
                                             navigate(`/profile/${userId}`);
                                         }}
                                     >

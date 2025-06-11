@@ -1,4 +1,3 @@
-// EventCreationPopup.js - Updated with local image storage (no Firebase Storage needed)
 import React, { useState, useEffect } from 'react';
 import { auth } from '../firebase.js';
 import { createEvent } from '../services/eventService';
@@ -23,7 +22,7 @@ const EventCreationPopup = ({ isOpen, onClose, onSubmit }) => {
     organizerName: '',
     organizerEmail: '',
     requiresRegistration: false,
-    imageUrl: '' // This will store the base64 data URL or external URL
+    imageUrl: '' // store local url rather than storing image in firestore - costs money
   });
   
   const [loading, setLoading] = useState(false);
@@ -37,7 +36,7 @@ const EventCreationPopup = ({ isOpen, onClose, onSubmit }) => {
     'Conference', 'Meetup', 'Social', 'Other'
   ];
 
-  // Check authentication status
+  //check auth
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
       setUser(currentUser);
@@ -89,11 +88,11 @@ const EventCreationPopup = ({ isOpen, onClose, onSubmit }) => {
       };
       reader.readAsDataURL(file);
       
-      setError(''); // Clear any previous errors
+      setError('');
     }
   };
 
-  // Handle external URL input
+  //external url
   const handleImageUrlChange = (e) => {
     const url = e.target.value;
     setFormData(prev => ({
@@ -112,7 +111,6 @@ const EventCreationPopup = ({ isOpen, onClose, onSubmit }) => {
   const removeImage = () => {
     setImagePreview(null);
     setFormData(prev => ({ ...prev, imageUrl: '' }));
-    // Clear file input
     const fileInput = document.getElementById('image-upload');
     if (fileInput) fileInput.value = '';
   };

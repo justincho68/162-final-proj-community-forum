@@ -1,5 +1,3 @@
-/* Clean LandingPage.css - All duplicates removed */
-
 .landing-page {
   font-family: Arial, sans-serif;
   padding: 20px;
@@ -627,34 +625,28 @@
   }
 }
 
-/* Replace your .delete-btn and .event-card-wrapper styles with these debug versions */
-
-/* Event Card Wrapper - Add padding to create safe zone */
 .event-card-wrapper {
     position: relative;
-    /* Add a small buffer around the card */
     padding: 2px;
-    margin: -2px; /* Negative margin to maintain grid spacing */
+    margin: -2px;
 }
 
-/* Delete Button - Moved slightly inside the card boundaries */
+
 .delete-btn {
     position: absolute;
-    top: 6px;  /* Moved from 8px to 6px */
-    right: 6px; /* Moved from 8px to 6px */
-    background-color: rgba(255, 255, 255, 0.95); /* More opaque */
+    top: 6px;
+    right: 6px;
+    background-color: rgba(255, 255, 255, 0.95);
     border: 1px solid #ddd;
     border-radius: 50%;
-    width: 30px;  /* Slightly smaller */
-    height: 30px; /* Slightly smaller */
+    width: 30px;
+    height: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: 13px; /* Slightly smaller font */
-    z-index: 5; /* Higher z-index */
-    /* Remove transition temporarily to see if that's causing issues */
-    /* transition: all 0.2s ease; */
+    font-size: 13px;
+    z-index: 5;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
@@ -662,7 +654,6 @@
     background-color: #ffebee;
     border-color: #f44336;
     box-shadow: 0 3px 6px rgba(244, 67, 54, 0.4);
-    /* No transform or size changes */
 }
 
 .delete-btn:disabled {
@@ -670,15 +661,14 @@
     cursor: not-allowed;
 }
 
-/* Also ensure the event card doesn't have conflicting positioning */
 .event-card {
-    position: relative; /* Make sure this is set */
+    position: relative;
     width: 100%;
     max-width: 400px;
     background: white;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    overflow: visible; /* Changed from hidden to visible temporarily */
+    overflow: visible; 
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     padding: 0;
     display: flex;

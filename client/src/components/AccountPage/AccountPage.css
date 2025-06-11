@@ -26,14 +26,14 @@
 .cancel-btn {
   background: none;
   border: none;
-  color: #3b82f6;
+  color: #d51414;
   font-weight: 500;
   cursor: pointer;
   font-size: 16px;
 }
 
 .cancel-btn:hover {
-  color: #2563eb;
+  color: #560e0e;
 }
 
 .edit-title {

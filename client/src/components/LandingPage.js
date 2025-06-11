@@ -1,4 +1,3 @@
-// LandingPage.js - Fixed to avoid index requirement and fix images
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import './LandingPage.css';
@@ -51,31 +50,22 @@ function LandingPage() {
         const fetchEvents = async () => {
             try {
                 setLoading(true);
-                console.log('Fetching events from Firestore...');
-                
-                // Simple fetch without complex queries to avoid index requirement
                 const querySnapshot = await getDocs(collection(db, 'events'));
                 const eventsData = querySnapshot.docs.map(doc => {
                     const data = doc.data();
-                    console.log('Raw event data:', data);
-                    console.log('Event imageUrl:', data.imageUrl);
                     
                     return {
                         id: doc.id,
                         ...data,
-                        // Ensure createdAt is properly formatted
                         createdAt: data.createdAt?.toDate?.() || new Date(data.createdAt) || new Date(),
                         updatedAt: data.updatedAt?.toDate?.() || new Date(data.updatedAt) || new Date()
                     };
                 });
                 
-                // Filter for approved events and sort by creation date (client-side)
+                // flter for approved events and sort by creation date (client-side)
                 const approvedEvents = eventsData
                     .filter(event => event.status === 'approved' || event.status === 'pending' || !event.status)
                     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-                
-                console.log('Processed events:', approvedEvents);
-                console.log('Events with images:', approvedEvents.filter(e => e.imageUrl));
                 
                 setEvents(approvedEvents);
                 setFilteredEvents(approvedEvents);
@@ -89,7 +79,7 @@ function LandingPage() {
         fetchEvents();
     }, []);
 
-    // Apply filters whenever search term, category, or price filter changes
+    //apply filters for any change
     useEffect(() => {
         let filtered = [...events];
         
@@ -117,7 +107,6 @@ function LandingPage() {
             filtered = filtered.filter(event => event.price && event.price > 0);
         }
         
-        console.log('Filtered events:', filtered);
         setFilteredEvents(filtered);
     }, [events, searchTerm, selectedCategory, priceFilter]);
 
@@ -194,8 +183,6 @@ function LandingPage() {
     };
 
     const handleEventCreated = (newEvent) => {
-        console.log('New event created:', newEvent);
-        console.log('New event imageUrl:', newEvent.imageUrl);
         
         const updatedEvents = [newEvent, ...events];
         setEvents(updatedEvents);
@@ -213,7 +200,6 @@ function LandingPage() {
     const handleLogout = async () => {
         try {
             await signOut(auth);
-            console.log('User logged out');
         } catch (error) {
             console.error('Error logging out:', error);
         }
@@ -243,7 +229,6 @@ function LandingPage() {
 
     // Image load success handler
     const handleImageLoad = (e, event) => {
-        console.log('Image loaded successfully for event:', event.title);
         e.target.style.display = 'block';
         const placeholder = e.target.nextElementSibling;
         if (placeholder && placeholder.classList.contains('image-placeholder')) {
@@ -258,7 +243,7 @@ function LandingPage() {
                 <nav className='navigation'>
                     <Link to="/">Home</Link>
                     <a href="#" onClick={handleCreateEventClick}>Create Event</a>
-                    
+                    <a href="/account">Edit Account</a>
                     {user ? (
                         <div className="user-menu">
                             <span>Welcome, {user.displayName || user.email}</span>
