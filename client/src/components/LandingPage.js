@@ -54,37 +54,27 @@ function LandingPage() {
         }
     }, [location.pathname, user]);
 
-    //fetching events from firestore
+
+    //fetching events from backend API 
     useEffect(() => {
         const fetchEvents = async () => {
             try {
                 setLoading(true);
-                const querySnapshot = await getDocs(collection(db, 'events'));
-                const eventsData = querySnapshot.docs.map(doc => {
-                    const data = doc.data();
-                    
-                    return {
-                        id: doc.id,
-                        ...data,
-                        createdAt: data.createdAt?.toDate?.() || new Date(data.createdAt) || new Date(),
-                        updatedAt: data.updatedAt?.toDate?.() || new Date(data.updatedAt) || new Date()
-                    };
-                });
-                
-                // flter for approved events and sort by creation date (client-side)
+                const response = await fetch('http://localhost:4000/api/events');
+                const eventsData = await response.json();
+
+                //filtering and sorting events
                 const approvedEvents = eventsData
-                    .filter(event => event.status === 'approved' || event.status === 'pending' || !event.status)
-                    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-                
+                .filter(event => event.status === 'approved' || event.status === 'pending' || !event.status)
+                .sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
+
                 setEvents(approvedEvents);
                 setFilteredEvents(approvedEvents);
-            } catch (error) {
-                console.error('Error fetching events:', error);
-            } finally {
+                } catch (error) {} 
+                finally {
                 setLoading(false);
             }
         };
-        
         fetchEvents();
     }, []);
 
