@@ -6,7 +6,8 @@ import './AccountPage.css';
 import { useNavigate } from 'react-router-dom';
 
 function AccountPage() {
-    const [user, loading, error] = useAuthState(auth);
+    const [user, loading, error] = useAuthState(auth); // get the statuses from firebase 
+    // to hold current profile data
     const [profileData, setProfileData] = useState({
         name: '',
         biography: '',
@@ -15,31 +16,33 @@ function AccountPage() {
         organization:'',
     });
 
-    const [originalData, setOriginalData] = useState({});
-    const [isChanged, setIsChanged] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
-    const [showSuccess, setShowSuccess] = useState(false);
+    const [originalData, setOriginalData] = useState({}); // state to hold original data
+    const [isChanged, setIsChanged] = useState(false); // state to check if changes have been made
+    const [isSaving, setIsSaving] = useState(false); // state to keep track of whether form is saving
+    const [isLoading, setIsLoading] = useState(true); // state to keep track of whther form is loading
+    const [showSuccess, setShowSuccess] = useState(false); // state for showing successfully updated message
 
     useEffect(() => {
         if (user) {
-            loadProfileData(user.uid);
+            loadProfileData(user.uid); // load user profile in once logged in
         } else if (!loading) {
-            setIsLoading(false);
+            setIsLoading(false); // stop loading if no user and is not loading
         }
     }, [user, loading]);
 
+    // for getting profile data from firestore
     const loadProfileData = async (userId) => {
         try {
-            setIsLoading(true);
-            const docRef = doc(db, 'profiles', userId);
-            const docSnap = await getDoc(docRef);
+            setIsLoading(true); // start loading 
+            const docRef = doc(db, 'profiles', userId); // reference to collection called profiles in firebase with userid
+            const docSnap = await getDoc(docRef); // get document snapshot
             
             if (docSnap.exists()) {
-                const data = docSnap.data();
-                setProfileData(data);
-                setOriginalData({ ...data });
+                const data = docSnap.data(); 
+                setProfileData(data); // set the data as the data in the form
+                setOriginalData({ ...data }); // save original
             } else {
+                // create a default data is no profile created yet
                 const defaultData = {
                     ...profileData,
                     email: user.email || '',
@@ -52,49 +55,49 @@ function AccountPage() {
             console.error('Error loading profile:', error);
             alert('Failed to load profile data');
         } finally {
-            setIsLoading(false);
+            setIsLoading(false); // stop loading
         }
     };
 
-    const handleInputChange = (field, value) => {
-        const newData = { ...profileData, [field]: value };
-        setProfileData(newData);
-        setIsChanged(JSON.stringify(newData) !== JSON.stringify(originalData));
+    const handleInputChange = (field, value) => { // for changes in the form
+        const newData = { ...profileData, [field]: value }; 
+        setProfileData(newData); // updates form to reflect changes
+        setIsChanged(JSON.stringify(newData) !== JSON.stringify(originalData)); // checks if data was truly changed
     };
 
-    const handleSave = async () => {
-        if (!isChanged || !user) return;
+    const handleSave = async () => { // for saving changes to firestore
+        if (!isChanged || !user) return; //if nothing is changed or no user, no save
         
         try {
-            setIsSaving(true);
+            setIsSaving(true); 
             
             const docRef = doc(db, 'profiles', user.uid);
-            await setDoc(docRef, {
+            await setDoc(docRef, { // write updated profile to firestore
                 ...profileData,
                 updatedAt: new Date(),
-            }, { merge: true });
+            }, { merge: true }); // update only changed data
             
             setOriginalData({ ...profileData });
-            setIsChanged(false);
-            setShowSuccess(true);
+            setIsChanged(false); // change back to false
+            setShowSuccess(true); // true to show success mesasage
             setTimeout(() => setShowSuccess(false), 3000);
             
         } catch (error) {
             console.error('Error saving profile:', error);
-            alert('Failed to save profile. Please try again.');
+            alert('Failed to save profile');
         } finally {
-            setIsSaving(false);
+            setIsSaving(false); // done saving, change back to false
         }
     };
     const navigate = useNavigate();
 
-    const handleCancel = () => {
+    const handleCancel = () => { // if cancel is pressed, take back to home page
         setProfileData({ ...originalData });
         setIsChanged(false);
         navigate('/');
     };
 
-    if (loading || isLoading) {
+    if (loading || isLoading) { // message to show when loading
         return (
             <div className="container">
                 <div className="loadingsect">
@@ -106,11 +109,12 @@ function AccountPage() {
     }
 
     if (!user) {
-        navigate('/login');
+        navigate('/login'); // automatically go to login if user is not logged in
     }
 
     return (
         <div className="container">
+            {/* header for the cancel and done buttons with title*/}
             <div className="header">
                 <div className="header-left">
                     <button className="cancel-btn" onClick={handleCancel} disabled={isSaving}>
@@ -134,8 +138,9 @@ function AccountPage() {
             )}
 
             <div className="main-container">
-
+                {/* for form elemets of name, organization, biography, email, phone number */}
                 <div className="form-container">
+                    {/* for name */}
                     <div className="form-group">
                         <label className="form-label">Name</label>
                         <input
@@ -147,7 +152,7 @@ function AccountPage() {
                             disabled={isSaving}
                         />
                     </div>
-
+                    {/* for organization */} 
                     <div className="form-group">
                         <label className="form-label">Organization</label>
                         <input
@@ -159,7 +164,7 @@ function AccountPage() {
                             disabled={isSaving}
                         />
                     </div>
-
+                    {/* for biography */}
                     <div className="form-group">
                         <label className="form-label">Biography</label>
                         <textarea
@@ -168,7 +173,7 @@ function AccountPage() {
                             rows={5}
                             maxLength={300}
                             className="form-text"
-                            placeholder="Write a bio..."
+                            placeholder="Write a bio!"
                             disabled={isSaving}
                         />
                         <p className="form-hint">
@@ -176,6 +181,7 @@ function AccountPage() {
                         </p>
                     </div>
 
+                    {/* for email */}
                     <div className="form-group">
                         <label className="form-label">Email</label>
                         <input
@@ -188,6 +194,7 @@ function AccountPage() {
                         />
                     </div>
 
+                    {/* for phone number */}
                     <div className="form-group">
                         <label className="form-label">Phone Number</label>
                         <input
@@ -202,8 +209,9 @@ function AccountPage() {
                 </div>
             </div>
 
-            {isSaving && (
+            {isSaving && ( 
                 <div className="loadingoverlay">
+                    {/* has overlay while saving */}
                     <div className="loadingsect">
                         <div className="spinner"></div>
                         <span className="loadingtext">Saving changes</span>
