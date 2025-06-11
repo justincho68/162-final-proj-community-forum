@@ -97,9 +97,9 @@ function AccountPage() {
     if (loading || isLoading) {
         return (
             <div className="container">
-                <div className="loading">
+                <div className="loadingsect">
                     <div className="spinner"></div>
-                    <span className="loading-text">Loading profile...</span>
+                    <span className="loadingtext">Loading account</span>
                 </div>
             </div>
         );
@@ -129,7 +129,7 @@ function AccountPage() {
 
             {showSuccess && (
                 <div className="success-message">
-                    <p className="success-text">Profile updated!</p>
+                    <p className="success-text">Profile updated! Press Cancel to go back to Home! </p>
                 </div>
             )}
 
@@ -203,10 +203,10 @@ function AccountPage() {
             </div>
 
             {isSaving && (
-                <div className="loading-overlay">
-                    <div className="loading">
+                <div className="loadingoverlay">
+                    <div className="loadingsect">
                         <div className="spinner"></div>
-                        <span className="loading-text">Saving changes</span>
+                        <span className="loadingtext">Saving changes</span>
                     </div>
                 </div>
             )}
