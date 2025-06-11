@@ -428,10 +428,10 @@ function LandingPage() {
                                             <h3 className='event-title'>{event.title}</h3>
 
                                             <div className='event-image'>
-                                                {event.imageUrl ? (
+                                                {(event.imageUrl || event.image) ? (
                                                     <>
                                                         <img 
-                                                            src={event.imageUrl} 
+                                                            src={event.imageUrl || event.image} 
                                                             alt={event.title}
                                                             onError={(e) => handleImageError(e, event)}
                                                             onLoad={(e) => handleImageLoad(e, event)}

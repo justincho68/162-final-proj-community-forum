@@ -2,6 +2,8 @@ import LandingPage from './components/LandingPage';
 import EventPage from './components/EventPage';
 import {BrowserRouter, Route, Routes} from 'react-router-dom';
 import Login from './components/Login'
+import FullEventInfo from './components/FullEventInfo';
+import UserProfile from './components/UserProfile';
 import './App.css';
 
 function App() {
@@ -10,7 +12,9 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path = '/' element = {<LandingPage />}/>
+            <Route path="/FullEventInfo/:eventTitle" element={<FullEventInfo />} />
             <Route path = '/FullEventInfo/:eventInfo' element = {<EventPage />}/>
+            <Route path="/profile/:userId" element={<UserProfile />} />
             <Route path='/login' element={<Login />} />
           </Routes>
         </BrowserRouter>

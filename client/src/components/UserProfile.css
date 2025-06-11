@@ -1,0 +1,310 @@
+/* UserProfile.css - User profile page styling */
+
+.user-profile-page {
+    font-family: Arial, sans-serif;
+    min-height: 100vh;
+    background-color: #f9f9f9;
+    padding: 20px;
+}
+
+.profile-header {
+    max-width: 1200px;
+    margin: 0 auto 30px auto;
+}
+
+.back-button {
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.back-button:hover {
+    background-color: #0056b3;
+}
+
+.profile-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+/* Profile Info Section */
+.profile-info-section {
+    padding: 40px;
+    border-bottom: 2px solid #ccc;
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+}
+
+.profile-image-container {
+    flex-shrink: 0;
+}
+
+.profile-image {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #e2e8f0;
+    background-color: #f1f5f9;
+}
+
+.profile-details {
+    flex: 1;
+}
+
+.profile-name {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.profile-organization {
+    color: #007BFF;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+.profile-biography {
+    margin-bottom: 20px;
+}
+
+.profile-biography h3,
+.profile-contact h3 {
+    font-size: 1.2rem;
+    color: #333;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.profile-biography p {
+    color: #666;
+    line-height: 1.5;
+    font-size: 1rem;
+}
+
+.contact-email {
+    color: #007BFF;
+    text-decoration: none;
+    font-size: 1rem;
+    transition: color 0.2s ease;
+}
+
+.contact-email:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+/* Events Section */
+.profile-events-section {
+    padding: 40px;
+}
+
+.profile-events-section h2 {
+    font-size: 1.75rem;
+    color: #333;
+    margin-bottom: 30px;
+    font-weight: bold;
+}
+
+.events-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.event-card-small {
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.event-card-small:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: #007BFF;
+}
+
+.event-image-small {
+    height: 150px;
+    position: relative;
+    overflow: hidden;
+}
+
+.event-image-small img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.image-placeholder-small {
+    width: 100%;
+    height: 100%;
+    background: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: #ccc;
+}
+
+.event-info-small {
+    padding: 16px;
+}
+
+.event-title-small {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.event-meta-small {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.event-date-small {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.event-price-small {
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.event-description-small {
+    color: #666;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin: 0;
+}
+
+.no-events {
+    text-align: center;
+    padding: 40px 20px;
+    color: #666;
+}
+
+.no-events p {
+    font-size: 1.1rem;
+}
+
+/* Error and Loading States */
+.loading,
+.error-container {
+    text-align: center;
+    padding: 60px 20px;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.error-container h2 {
+    font-size: 2rem;
+    color: #333;
+    margin-bottom: 16px;
+}
+
+.error-container p {
+    color: #666;
+    font-size: 1.1rem;
+    margin-bottom: 30px;
+}
+
+.btn-primary {
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+.loading {
+    font-size: 1.2rem;
+    color: #666;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .user-profile-page {
+        padding: 15px;
+    }
+    
+    .profile-info-section {
+        flex-direction: column;
+        text-align: center;
+        padding: 30px 20px;
+    }
+    
+    .profile-image {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .profile-name {
+        font-size: 1.75rem;
+    }
+    
+    .profile-events-section {
+        padding: 30px 20px;
+    }
+    
+    .events-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-info-section {
+        padding: 25px 15px;
+    }
+    
+    .profile-events-section {
+        padding: 25px 15px;
+    }
+    
+    .profile-name {
+        font-size: 1.5rem;
+    }
+    
+    .profile-events-section h2 {
+        font-size: 1.5rem;
+    }
+}

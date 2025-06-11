@@ -5,10 +5,10 @@ import {
     signInWithEmailAndPassword, 
     createUserWithEmailAndPassword,
     signInWithPopup,
-    GoogleAuthProvider,
     onAuthStateChanged 
 } from 'firebase/auth';
 import { auth } from '../firebase';
+import './Login.css'
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -56,26 +56,6 @@ const Login = () => {
             
         } catch (error) {
             console.error('Auth error:', error);
-            setError(error.message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleGoogleLogin = async () => {
-        setLoading(true);
-        setError('');
-        
-        try {
-            const provider = new GoogleAuthProvider();
-            await signInWithPopup(auth, provider);
-            console.log('Google login successful!');
-            
-            // Redirect after successful authentication
-            navigate(redirectTo);
-            
-        } catch (error) {
-            console.error('Google login error:', error);
             setError(error.message);
         } finally {
             setLoading(false);
@@ -131,14 +111,6 @@ const Login = () => {
                 <div className="divider">
                     <span>or</span>
                 </div>
-
-                <button 
-                    onClick={handleGoogleLogin}
-                    className="google-button"
-                    disabled={loading}
-                >
-                    {loading ? 'Please wait...' : 'Continue with Google'}
-                </button>
 
                 <div className="toggle-mode">
                     <p>
