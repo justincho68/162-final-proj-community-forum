@@ -176,7 +176,7 @@ function LandingPage() {
     const handleCreateEventClick = (e) => {
         e.preventDefault();
         if (!user) {
-            navigate('/login', { state: { redirectTo: '/create-event' } });
+            navigate('/login', { state: { redirectTo: '/' } });
         } else {
             setShowCreatePopup(true);
         }
