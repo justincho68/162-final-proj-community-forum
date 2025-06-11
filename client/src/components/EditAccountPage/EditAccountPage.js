@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { db, auth } from '../../firebase';
-import './AccountPage.css';
+import './EditAccountPage.css';
 
-function AccountPage() {
+function EditAccountPage() {
     const [user, loading, error] = useAuthState(auth);
     const [profileData, setProfileData] = useState({
         name: '',
@@ -218,4 +218,4 @@ function AccountPage() {
     );
 }
 
-export default AccountPage;
+export default EditAccountPage;

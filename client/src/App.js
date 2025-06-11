@@ -1,6 +1,6 @@
 
 import LandingPage from './components/LandingPage';
-import AccountPage from './components/AccountPage/AccountPage';
+import EditAccountPage from './components/EditAccountPage/EditAccountPage';
 import NavBar from './components/NavBar/NavBar';
 import EventPage from './components/EventPage';
 import {BrowserRouter, Route, Routes} from 'react-router-dom'
@@ -13,7 +13,7 @@ function App() {
          <NavBar/>
           <Routes>
             <Route path = '/' element = {<LandingPage />}/>
-            <Route path = '/accountpage' element = {<AccountPage />}/>
+            <Route path = '/editaccountpage' element = {<EditAccountPage />}/>
             <Route path = '/FullEventInfo/:eventInfo' element = {<EventPage />}/>
           </Routes>
         </BrowserRouter>
