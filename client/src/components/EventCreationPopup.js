@@ -3,7 +3,16 @@ import { auth } from '../firebase.js';
 import { createEvent } from '../services/eventService';
 import './EventCreationPopup.css';
 
+/*
+Event Creation Popup component. This popup allows users that have an account to create a new event.
+The form handles many inputs including an image upload. Uses Firebause Auth to to prefill organizer info
+isOpen - whether the form is open
+onClose - callback to close the form
+onSubmit - callback for a successful event creation
+*/
+
 const EventCreationPopup = ({ isOpen, onClose, onSubmit }) => {
+    //initialize the state of the form with default empty values
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -25,19 +34,22 @@ const EventCreationPopup = ({ isOpen, onClose, onSubmit }) => {
     imageUrl: '' // store local url rather than storing image in firestore - costs money
   });
   
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [user, setUser] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  const [loading, setLoading] = useState(false); //submit button state
+  const [error, setError] = useState(''); //dispalying error messages
+  const [user, setUser] = useState(null); // authenticating users
+  const [imagePreview, setImagePreview] = useState(null); //displaying thumbnail like image previews
 
+
+  //hardcoded categories of possible event types
   const categories = [
     'Technology', 'Business', 'Education', 'Arts & Culture', 'Sports & Fitness',
     'Health & Wellness', 'Food & Drink', 'Music', 'Networking', 'Workshop',
     'Conference', 'Meetup', 'Social', 'Other'
   ];
 
-  //check auth
+  //check if the user is logged in with firebase- prefill information if they are
   useEffect(() => {
+    //firebase listener waiting for user login or logout
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
       setUser(currentUser);
       
@@ -49,10 +61,12 @@ const EventCreationPopup = ({ isOpen, onClose, onSubmit }) => {
         }));
       }
     });
-
+    //clean up firebase listener
     return () => unsubscribe();
   }, []);
 
+//general change handler 
+//update any field when a change occurs
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
@@ -61,6 +75,7 @@ const EventCreationPopup = ({ isOpen, onClose, onSubmit }) => {
     }));
   };
 
+  //handles image url input
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -76,7 +91,7 @@ const EventCreationPopup = ({ isOpen, onClose, onSubmit }) => {
         return;
       }
       
-      // Convert to base64 data URL
+      // Convert to base64 data URL, show preview of image if it can be opened
       const reader = new FileReader();
       reader.onload = (e) => {
         const dataUrl = e.target.result;
@@ -108,6 +123,7 @@ const EventCreationPopup = ({ isOpen, onClose, onSubmit }) => {
     }
   };
 
+  //remove the currently selected image
   const removeImage = () => {
     setImagePreview(null);
     setFormData(prev => ({ ...prev, imageUrl: '' }));
@@ -115,11 +131,13 @@ const EventCreationPopup = ({ isOpen, onClose, onSubmit }) => {
     if (fileInput) fileInput.value = '';
   };
 
+  //handler for submitting the form
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
+    //auth check - only logged in users should be able to post events
     if (!user) {
       setError('You must be logged in to create events. Please log in and try again.');
       setLoading(false);
@@ -153,6 +171,7 @@ const EventCreationPopup = ({ isOpen, onClose, onSubmit }) => {
 
     try {
       // Create event with local image data
+      // clean the data to send through api
       const eventData = {
         ...formData,
         capacity: formData.capacity ? parseInt(formData.capacity) : null,
@@ -166,7 +185,7 @@ const EventCreationPopup = ({ isOpen, onClose, onSubmit }) => {
         onSubmit(newEvent);
       }
       
-      // Reset form
+      // Reset form after successful submit
       setFormData({
         title: '', description: '', category: '', startDate: '', startTime: '',
         endDate: '', endTime: '', locationType: 'physical', venue: '', address: '',
@@ -196,8 +215,10 @@ const EventCreationPopup = ({ isOpen, onClose, onSubmit }) => {
     }
   };
 
+  //dont render anything if it is not open
   if (!isOpen) return null;
 
+  //prompt user to login if they are not logged in and trying to create event
   if (!user) {
     return (
       <div className="popup-overlay">
@@ -222,6 +243,7 @@ const EventCreationPopup = ({ isOpen, onClose, onSubmit }) => {
     );
   }
 
+  //render the UI of the submission form
   return (
     <div className="popup-overlay">
       <div className="popup-container">

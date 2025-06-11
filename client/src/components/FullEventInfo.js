@@ -4,16 +4,28 @@ import { auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import './FullEventInfo.css';
 
+/*
+Component to display the full details of an event if a user clicks into it. Receives the event information
+through the react router when a user selects an event and errors if no data is present. 
+1. retrieve the event from 
+2. firebase auth changes to know who is changing the form
+3. format dates
+4. render the thumbnail image
+5. allow user to go back and be rerouted to the homepage
+*/
 function FullEventInfo() {
+    //access to lcoation object ie /event/example-event
     const location = useLocation();
-    const navigate = useNavigate();
+    const navigate = useNavigate(); //functio to change the page 
+
     const { eventTitle } = useParams();
-    const [user, setUser] = useState(null);
-    const [imageLoaded, setImageLoaded] = useState(false);
+    const [user, setUser] = useState(null); //current logged in user
+    const [imageLoaded, setImageLoaded] = useState(false); // track if image is successfully loaded
     
     //get event data from navigation state or fallback
     const event = location.state?.event;
     
+    //listen for auth changes 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (u) => {
             setUser(u);
@@ -21,7 +33,7 @@ function FullEventInfo() {
         return () => unsubscribe();
     }, []);
 
-    // redirect to home if no events
+    // fall back and redirect to home if there is no event
     if (!event) {
         return (
             <div className="full-event-page">
@@ -36,7 +48,7 @@ function FullEventInfo() {
         );
     }
 
-    //format date for display
+    //user friendly date display format 
     const formatEventDate = (startDate, startTime, endDate, endTime) => {
         if (!startDate) return '';
         
@@ -83,6 +95,7 @@ function FullEventInfo() {
         }
     };
 
+
     const handleImageError = (e) => {
         console.error('Image failed to load for event:', event.title);
         e.target.style.display = 'none';
@@ -95,14 +108,6 @@ function FullEventInfo() {
 
     const handleBackClick = () => {
         navigate('/');
-    };
-
-    const handleContactOrganizer = () => {
-        if (event.organizerEmail) {
-            window.location.href = `mailto:${event.organizerEmail}?subject=Question about ${event.title}`;
-        } else {
-            alert('Organizer contact information not available.');
-        }
     };
 
     return (

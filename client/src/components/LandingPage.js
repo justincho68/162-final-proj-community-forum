@@ -8,14 +8,21 @@ import { db } from '../firebase';
 import EventCreationPopup from './EventCreationPopup';
 import { deleteEvent } from '../services/eventService';
 
+/*
+Main homepage that shows the list of all events. Also including authentication with firebase.
+Events are fetched from firestore DB. Filter bar functinoality to filter by different events
+Event creation and deletion
+*/
+
 function LandingPage() {
-    const [user, setUser] = useState(null);
-    const [events, setEvents] = useState([]);
-    const [filteredEvents, setFilteredEvents] = useState([]);
-    const [showCreatePopup, setShowCreatePopup] = useState(false);
-    const [loading, setLoading] = useState(true);
-    const [deletingEventId, setDeletingEventId] = useState(null);
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+    //react and router hooks
+    const [user, setUser] = useState(null); //current user
+    const [events, setEvents] = useState([]); //all events from db
+    const [filteredEvents, setFilteredEvents] = useState([]); // events after filtering
+    const [showCreatePopup, setShowCreatePopup] = useState(false); //show/hide the event creation popup
+    const [loading, setLoading] = useState(true); //controls the loading state
+    const [deletingEventId, setDeletingEventId] = useState(null); //ID of event being deleted
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(null); 
     
     // Filter states
     const [searchTerm, setSearchTerm] = useState('');
@@ -31,7 +38,7 @@ function LandingPage() {
         'Health & Wellness', 'Food & Drink', 'Music', 'Networking', 'Workshop',
         'Conference', 'Meetup', 'Social', 'Other'
     ];
-    
+    //listening for login/logout state change
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (u) => {
             setUser(u);
@@ -39,6 +46,7 @@ function LandingPage() {
         return () => unsubscribe();
     }, []);
 
+    //if user clicks create-event then automatically open the popup
     useEffect(() => {
         if (location.pathname === '/create-event' && user) {
             setShowCreatePopup(true);
@@ -46,6 +54,7 @@ function LandingPage() {
         }
     }, [location.pathname, user]);
 
+    //fetching events from firestore
     useEffect(() => {
         const fetchEvents = async () => {
             try {
@@ -83,7 +92,7 @@ function LandingPage() {
     useEffect(() => {
         let filtered = [...events];
         
-        // Apply search filter
+        // Apply search filter either by title, description, organizer, venue, city
         if (searchTerm) {
             const search = searchTerm.toLowerCase();
             filtered = filtered.filter(event =>
@@ -143,12 +152,13 @@ function LandingPage() {
         }
     };
 
+    //deleting events logic 
     const handleDeleteEvent = async (eventId, eventTitle) => {
         setDeletingEventId(eventId);
         try {
           await deleteEvent(eventId);
           
-          // Remove from state
+          // Remove from both events and filtered events 
           const updatedEvents = events.filter(e => e.id !== eventId);
           setEvents(updatedEvents);
           
