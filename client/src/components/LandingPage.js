@@ -7,6 +7,7 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import EventCreationPopup from './EventCreationPopup';
+import { deleteEvent } from '../services/eventService';
 
 function LandingPage() {
     const [user, setUser] = useState(null);
@@ -14,6 +15,8 @@ function LandingPage() {
     const [filteredEvents, setFilteredEvents] = useState([]);
     const [showCreatePopup, setShowCreatePopup] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [deletingEventId, setDeletingEventId] = useState(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
     
     // Filter states
     const [searchTerm, setSearchTerm] = useState('');
@@ -150,6 +153,27 @@ function LandingPage() {
             return startDate;
         }
     };
+
+    const handleDeleteEvent = async (eventId, eventTitle) => {
+        setDeletingEventId(eventId);
+        try {
+          await deleteEvent(eventId);
+          
+          // Remove from state
+          const updatedEvents = events.filter(e => e.id !== eventId);
+          setEvents(updatedEvents);
+          
+          const updatedFiltered = filteredEvents.filter(e => e.id !== eventId);
+          setFilteredEvents(updatedFiltered);
+          
+          alert(`Event "${eventTitle}" deleted successfully!`);
+        } catch (error) {
+          alert(`Failed to delete event: ${error.message}`);
+        } finally {
+          setDeletingEventId(null);
+          setShowDeleteConfirm(null);
+        }
+      };
 
     const handleAccountClick = (e) => {
         e.preventDefault();
@@ -346,63 +370,102 @@ function LandingPage() {
                 <div className='event-grid'>
                     {filteredEvents.length > 0 ? (
                         filteredEvents.map((event, index) => {
-                            console.log(`Rendering event ${index}:`, event.title, 'Image:', event.imageUrl ? 'Yes' : 'No');
+                            const canDelete = user && user.uid === event.creatorId;
+                            const isDeleting = deletingEventId === event.id;
                             
                             return (
-                                <Link 
-                                    to={`/FullEventInfo/${event.title}`} 
-                                    className='event-link'
-                                    state={{ event }} 
-                                    key={event.id || index}
-                                >
-                                    <div className='event-card'>
-                                        <h3 className='event-title'>{event.title}</h3>
-
-                                        <div className='event-image'>
-                                            {event.imageUrl ? (
-                                                <>
-                                                    <img 
-                                                        src={event.imageUrl} 
-                                                        alt={event.title}
-                                                        onError={(e) => handleImageError(e, event)}
-                                                        onLoad={(e) => handleImageLoad(e, event)}
-                                                        style={{ display: 'none' }} // Start hidden
-                                                    />
-                                                    <div 
-                                                        className='image-placeholder'
-                                                        style={{ display: 'flex' }} // Start visible
+                                <div key={event.id || index} className='event-card-wrapper'>
+                                    {/* Delete confirmation modal */}
+                                    {showDeleteConfirm === event.id && (
+                                        <div className='delete-modal-overlay' onClick={() => setShowDeleteConfirm(null)}>
+                                            <div className='delete-modal' onClick={(e) => e.stopPropagation()}>
+                                                <h3>Delete Event?</h3>
+                                                <p>Are you sure you want to delete "{event.title}"?</p>
+                                                <p className='delete-warning'>This action cannot be undone.</p>
+                                                
+                                                <div className='delete-modal-actions'>
+                                                    <button 
+                                                        onClick={() => setShowDeleteConfirm(null)}
+                                                        className='cancel-delete-btn'
+                                                        disabled={isDeleting}
                                                     >
+                                                        Cancel
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleDeleteEvent(event.id, event.title)}
+                                                        className='confirm-delete-btn'
+                                                        disabled={isDeleting}
+                                                    >
+                                                        {isDeleting ? 'Deleting...' : 'Delete Event'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <Link 
+                                        to={`/FullEventInfo/${event.title}`} 
+                                        className='event-link'
+                                        state={{ event }}
+                                    >
+                                        <div className='event-card'>
+                                            {/* Delete button - only show for event owner */}
+                                            {canDelete && (
+                                                <button 
+                                                    className='delete-btn'
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        setShowDeleteConfirm(event.id);
+                                                    }}
+                                                    disabled={isDeleting}
+                                                    title='Delete event'
+                                                >
+                                                    🗑️
+                                                </button>
+                                            )}
+
+                                            <h3 className='event-title'>{event.title}</h3>
+
+                                            <div className='event-image'>
+                                                {event.imageUrl ? (
+                                                    <>
+                                                        <img 
+                                                            src={event.imageUrl} 
+                                                            alt={event.title}
+                                                            onError={(e) => handleImageError(e, event)}
+                                                            onLoad={(e) => handleImageLoad(e, event)}
+                                                            style={{ display: 'none' }}
+                                                        />
+                                                        <div 
+                                                            className='image-placeholder'
+                                                            style={{ display: 'flex' }}
+                                                        >
+                                                            📷
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <div className='image-placeholder'>
                                                         📷
                                                     </div>
-                                                </>
-                                            ) : (
-                                                <div className='image-placeholder'>
-                                                    📷
+                                                )}
+                                            </div>
+
+                                            <div className='event-info'>
+                                                <div className='event-cost-date'>
+                                                    <span className='event-cost'>
+                                                        {event.price > 0 ? `$${event.price}` : "Free"}
+                                                    </span>
+                                                    <span className='event-date'>
+                                                        {formatEventDate(event.startDate, event.startTime)}
+                                                    </span>
                                                 </div>
-                                            )}
-                                        </div>
-
-                                        <div className='event-info'>
-                                            <div className='event-cost-date'>
-                                                <span className='event-cost'>
-                                                    {event.price > 0 ? `$${event.price}` : "Free"}
-                                                </span>
-                                                <span className='event-date'>
-                                                    {formatEventDate(event.startDate, event.startTime)}
-                                                </span>
                                             </div>
-                                        </div>
 
-                                        <p className='event-description'>{event.description}</p>
-                                        
-                                        {/* Debug info - remove this after testing */}
-                                        {event.imageUrl && (
-                                            <div style={{ fontSize: '10px', color: 'orange', padding: '2px' }}>
-                                                Has Image: {event.imageUrl.substring(0, 30)}...
-                                            </div>
-                                        )}
-                                    </div>
-                                </Link>
+                                            <p className='event-description'>{event.description}</p>
+                                        </div>
+                                    </Link>
+                                </div>
                             );
                         })
                     ) : (
