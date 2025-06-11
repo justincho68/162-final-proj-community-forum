@@ -1,0 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300..900&family=Homemade+Apple&family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&display=swap');
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 2px solid #ccc;
+  }
+
+  .title {
+    font-size: 2rem;
+    font-family: 'Homemade Apple';
+    font-weight: bold;
+  }
+
+  .navigation a {
+    margin-left: 15px;
+    text-decoration: none;
+    color: #333;
+  }
