@@ -1,20 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { db, auth } from '../../firebase';
 import './AccountPage.css';
 
 function AccountPage() {
+    const [user, loading, error] = useAuthState(auth);
     const [profileData, setProfileData] = useState({
-        profileImage: 'https://picsum.photos/150/150?random=1',
-        name: 'Susan Jones',
-        username: 'susanjones',
-        biography: 'I host events that are beneficial to the community! I enjoy having bake sales, garage sales, and different volunteer events. Come out to my events to meet more people in the community and contribute to the cause!',
-        email: 'susan@gmail.com',
-        phoneNumber: '+1 (555) 123-4567',
+        name: '',
+        biography: '',
+        email: '',
+        phoneNumber: '',
+        organization:'',
     });
 
-    const [originalData] = useState({ ...profileData });
+    const [originalData, setOriginalData] = useState({});
     const [isChanged, setIsChanged] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [showSuccess, setShowSuccess] = useState(false);
+
+    useEffect(() => {
+        if (user) {
+            loadProfileData(user.uid);
+        } else if (!loading) {
+            setIsLoading(false);
+        }
+    }, [user, loading]);
+
+    const loadProfileData = async (userId) => {
+        try {
+            setIsLoading(true);
+            const docRef = doc(db, 'profiles', userId);
+            const docSnap = await getDoc(docRef);
+            
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                setProfileData(data);
+                setOriginalData({ ...data });
+            } else {
+                const defaultData = {
+                    ...profileData,
+                    email: user.email || '',
+                    name: user.displayName || '',
+                };
+                setProfileData(defaultData);
+                setOriginalData({ ...defaultData });
+            }
+        } catch (error) {
+            console.error('Error loading profile:', error);
+            alert('Failed to load profile data');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const handleInputChange = (field, value) => {
         const newData = { ...profileData, [field]: value };
@@ -22,26 +61,29 @@ function AccountPage() {
         setIsChanged(JSON.stringify(newData) !== JSON.stringify(originalData));
     };
 
-    const handleImageUpload = (event) => {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                handleInputChange('profileImage', e.target.result);
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-
     const handleSave = async () => {
-        if (!isChanged) return;
+        if (!isChanged || !user) return;
         
-        setIsSaving(true);
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        setIsSaving(false);
-        setIsChanged(false);
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 3000);
+        try {
+            setIsSaving(true);
+            
+            const docRef = doc(db, 'profiles', user.uid);
+            await setDoc(docRef, {
+                ...profileData,
+                updatedAt: new Date(),
+            }, { merge: true });
+            
+            setOriginalData({ ...profileData });
+            setIsChanged(false);
+            setShowSuccess(true);
+            setTimeout(() => setShowSuccess(false), 3000);
+            
+        } catch (error) {
+            console.error('Error saving profile:', error);
+            alert('Failed to save profile. Please try again.');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleCancel = () => {
@@ -49,11 +91,33 @@ function AccountPage() {
         setIsChanged(false);
     };
 
+    if (loading || isLoading) {
+        return (
+            <div className="container">
+                <div className="loading">
+                    <div className="spinner"></div>
+                    <span className="loading-text">Loading profile...</span>
+                </div>
+            </div>
+        );
+    }
+
+    if (!user) {
+        return (
+            <div className="container">
+                <div className="auth-required">
+                    <h2>Please log in to edit your profile</h2>
+                    <p>You need to be signed in to access this page.</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="container">
             <div className="header">
                 <div className="header-left">
-                    <button className="cancel-btn" onClick={handleCancel}>
+                    <button className="cancel-btn" onClick={handleCancel} disabled={isSaving}>
                         Cancel
                     </button>
                 </div>
@@ -74,25 +138,6 @@ function AccountPage() {
             )}
 
             <div className="main-container">
-                <div className="profile-pic-sect">
-                    <div className="profile-pic-container">
-                        <img
-                            src={profileData.profileImage}
-                            alt="Profile"
-                            className="profile-pic"
-                        />
-                        <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageUpload}
-                            className="image-upload-input"
-                            id="profile-image-upload"
-                        />
-                        <label htmlFor="profile-image-upload" className="change-btn">
-                            Change Picture
-                        </label>
-                    </div>
-                </div>
 
                 <div className="form-container">
                     <div className="form-group">
@@ -103,17 +148,19 @@ function AccountPage() {
                             onChange={(e) => handleInputChange('name', e.target.value)}
                             className="form-input"
                             placeholder="Enter your name"
+                            disabled={isSaving}
                         />
                     </div>
 
                     <div className="form-group">
-                        <label className="form-label">Username</label>
+                        <label className="form-label">Organization</label>
                         <input
                             type="text"
-                            value={profileData.username}
-                            onChange={(e) => handleInputChange('username', e.target.value)}
+                            value={profileData.organization}
+                            onChange={(e) => handleInputChange('organization', e.target.value)}
                             className="form-input"
-                            placeholder="Enter username"
+                            placeholder="Enter the organization you are a part of (if applicable)"
+                            disabled={isSaving}
                         />
                     </div>
 
@@ -126,6 +173,7 @@ function AccountPage() {
                             maxLength={300}
                             className="form-text"
                             placeholder="Write a bio..."
+                            disabled={isSaving}
                         />
                         <p className="form-hint">
                             {profileData.biography.length}/300
@@ -140,6 +188,7 @@ function AccountPage() {
                             onChange={(e) => handleInputChange('email', e.target.value)}
                             className="form-input"
                             placeholder="Email address"
+                            disabled={isSaving}
                         />
                     </div>
 
@@ -151,6 +200,7 @@ function AccountPage() {
                             onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
                             className="form-input"
                             placeholder="Phone number"
+                            disabled={isSaving}
                         />
                     </div>
                 </div>
