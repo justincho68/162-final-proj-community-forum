@@ -49,12 +49,10 @@
   border-radius: 8px;
 }
 
-/* Event Card Wrapper */
 .event-card-wrapper {
   position: relative;
 }
 
-/* Event Card - Single consolidated definition */
 .event-card {
   width: 100%;
   max-width: 400px;
@@ -75,7 +73,6 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
-/* Event Title - Single definition */
 .event-title {
   margin: 0;
   padding: 16px 16px 8px 16px;
@@ -90,7 +87,6 @@
   overflow: hidden;
 }
 
-/* Event Image - Single definition */
 .event-image {
   margin: 0;
   padding: 0;
@@ -107,7 +103,6 @@
   border-radius: 0;
 }
 
-/* Image Placeholder - Single definition */
 .image-placeholder {
   width: 100%;
   height: 100%;
@@ -121,7 +116,6 @@
   box-sizing: border-box;
 }
 
-/* Event Info */
 .event-info {
   width: 100%;
   margin-top: 10px;
@@ -153,7 +147,6 @@
   border: 1px solid #bbdefb;
 }
 
-/* Free events styling */
 .event-cost:contains("Free"),
 .event-card:has(.event-cost:contains("Free")) .event-cost {
   background: #e8f5e8;
@@ -171,7 +164,6 @@
   line-height: 1.3;
 }
 
-/* Event Description - Single definition */
 .event-description {
   padding: 0 16px 16px 16px;
   margin: 0;
@@ -185,15 +177,15 @@
   flex: 1;
 }
 
-/* Grid layout */
 .event-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 25px;
-  padding: 0 20px;
+  gap: 20px;
+  padding: 20px;
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-/* Delete Button */
 .delete-btn {
   position: absolute;
   top: 8px;
@@ -224,7 +216,6 @@
   cursor: not-allowed;
 }
 
-/* Delete Modal */
 .delete-modal-overlay {
   position: fixed;
   top: 0;
@@ -314,7 +305,6 @@
   cursor: not-allowed;
 }
 
-/* Buttons */
 .btn-primary {
   background-color: #007BFF;
   color: white;
@@ -342,7 +332,6 @@
   margin-bottom: 20px;
 }
 
-/* Filter Styles */
 .search-container {
   position: relative;
   display: flex;
@@ -490,7 +479,6 @@
   grid-column: 1 / -1;
 }
 
-/* User Menu */
 .user-menu {
   display: flex;
   align-items: center;
@@ -517,8 +505,9 @@
   background-color: #e0e0e0;
   border-color: #999;
 }
-
-/* Responsive Design */
+.event-link{
+  width: 100%;
+}
 @media (max-width: 768px) {
   .event-cost-date {
       flex-direction: column;
@@ -540,7 +529,7 @@
   }
   
   .event-grid {
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      grid-template-columns: repeat(2, 1fr);
       gap: 20px;
       padding: 0 15px;
   }
