@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const admin = require('firebase-admin');
 
-const serviceAccount = require('./davis-bulletin-firebase-adminsdk-fbsvc-18767acbf6.json');
+const serviceAccount = require('./firestore-key.json');
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
@@ -30,6 +30,6 @@ app.get('/api/events', async (req, res) => {
 });
 
 //starting the server
-api.listen(PORT, () => {
+app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
